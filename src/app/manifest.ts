@@ -1,0 +1,20 @@
+import type { MetadataRoute } from 'next';
+
+export default function manifest(): MetadataRoute.Manifest {
+  return {
+    name: 'Mohamed Ibrahim',
+    short_name: 'Mohamed',
+    description:
+      'Portfolio of Mohamed Ibrahim — Junior DevOps and Cloud Engineer focused on automation, containers, CI/CD, and AWS infrastructure.',
+    start_url: '/',
+    display: 'standalone',
+    background_color: '#09090B',
+    theme_color: '#09090B',
+    icons: [
+      { src: '/icon', sizes: '64x64', type: 'image/png' },
+      { src: '/icon', sizes: '192x192', type: 'image/png' },
+      { src: '/icon', sizes: '512x512', type: 'image/png' },
+    ],
+  };
+}
+
