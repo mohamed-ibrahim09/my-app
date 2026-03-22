@@ -30,21 +30,21 @@
 }
 
 html.dark {
-  --void: #0f1117;
-  --glass: #1a1d27;
-  --glass-border: #2a2d3a;
-  --glass-hover: #252837;
-  --lilac: #c4b5fd;
-  --lilac-dim: rgba(196, 181, 253, 0.6);
-  --body: #e2e8f0;
-  --body-muted: rgba(226, 232, 240, 0.62);
-  --body-faint: #8892a4;
-  --label: rgba(226, 232, 240, 0.42);
-  --section-alt: rgba(26, 29, 39, 0.65);
-  --tag-muted-bg: rgba(15, 17, 23, 0.65);
-  --tag-muted-text: rgba(226, 232, 240, 0.48);
-  --tag-purple-bg: rgba(124, 58, 237, 0.14);
-  --tag-purple-text: rgba(196, 181, 253, 0.88);
+  --void: #09090b;
+  --glass: #111113;
+  --glass-border: #27272a;
+  --glass-hover: #18181b;
+  --lilac: #a78bfa;
+  --lilac-dim: rgba(167, 139, 250, 0.5);
+  --body: #fafafa;
+  --body-muted: rgba(250, 250, 250, 0.65);
+  --body-faint: #a1a1aa;
+  --label: rgba(250, 250, 250, 0.38);
+  --section-alt: rgba(9, 9, 11, 0.8);
+  --tag-muted-bg: #18181b;
+  --tag-muted-text: #a1a1aa;
+  --tag-purple-bg: rgba(124, 58, 237, 0.12);
+  --tag-purple-text: rgba(167, 139, 250, 0.9);
   --slate: var(--body);
   --slate-dim: var(--body-muted);
   --slate-muted: var(--body-faint);
@@ -128,27 +128,13 @@ body {
   transition: height 0.1s linear;
 }
 
-/* ── Scroll Reveal ── */
-.reveal {
-  opacity: 0;
-  transform: translateY(32px);
-  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.reveal.visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.reveal-left {
-  opacity: 0;
-  transform: translateX(-32px);
-  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
+/* ── Scroll Reveal (always visible — hidden-until-JS caused blank pages if observer failed) ── */
+.reveal,
+.reveal.visible,
+.reveal-left,
 .reveal-left.visible {
   opacity: 1;
-  transform: translateX(0);
+  transform: none;
 }
 
 /* ── Stagger delays ── */

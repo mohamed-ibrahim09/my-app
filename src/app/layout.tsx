@@ -14,10 +14,11 @@ export const metadata: Metadata = {
     'AI student with a Cybersecurity specialization building DevOps and cloud skills. Open to remote internships and freelance work.',
   openGraph: {
     title: 'Mohamed Elhadad — Junior DevOps & Cloud Engineer',
-    description: 'AI student with a Cybersecurity specialization building DevOps and cloud skills.',
+    description:
+      'AI student with a Cybersecurity specialization building DevOps and cloud skills.',
     url: 'https://mohamedelhadad.vercel.app',
-    siteName: 'Mohamed Elhadad Portfolio',
-    images: [{ url: '/og-preview.png', width: 1200, height: 630 }],
+    siteName: 'Mohamed Elhadad',
+    images: [{ url: '/og-preview.png', width: 1200, height: 630, alt: 'Mohamed Elhadad Portfolio' }],
     locale: 'en_US',
     type: 'website',
   },

@@ -42,7 +42,7 @@ export default function OpenGraphImage() {
           />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <div style={{ fontSize: 64, fontWeight: 800, letterSpacing: -1 }}>
-              Mohamed <span style={{ color: '#C4B5FD' }}>Ibrahim</span>
+              Mohamed <span style={{ color: '#C4B5FD' }}>Elhadad</span>
             </div>
             <div style={{ fontSize: 28, color: 'rgba(226,232,240,0.75)' }}>
               Junior DevOps & Cloud Engineer · AWS · Docker · CI/CD · Automation
