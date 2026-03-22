@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  darkMode: 'class',
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
@@ -8,8 +9,8 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        void: '#09090B',
-        glass: '#1A1A2E',
+        void: 'var(--void)',
+        glass: 'var(--glass)',
         violet: {
           DEFAULT: '#7C3AED',
           dim: 'rgba(124, 58, 237, 0.3)',

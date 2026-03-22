@@ -1,64 +1,175 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
+import { ArrowDownTrayIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import AppLogo from '@/components/ui/AppLogo';
+import { GitHubCtaButton } from '@/components/ui/GitHubCtaButton';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
 
-// ── Data ──────────────────────────────────────────────────────────────────────
+// ── Types & data ─────────────────────────────────────────────────────────────
+
+type ProjectStatus = 'completed' | 'in_progress';
+
+interface ModalContribution {
+  title: string;
+  body: string;
+}
+
+interface Project {
+  id: string;
+  cardTitle: string;
+  modalTitle: string;
+  status: ProjectStatus;
+  description: string;
+  tech: string[];
+  roleBadge: string;
+  github: string;
+  modalIntro: string;
+  contributions?: ModalContribution[];
+  myRole?: string;
+  learning?: string;
+  keyResults?: { label: string; value: string }[];
+  team?: string[];
+  pipeline?: string;
+  deadline?: string;
+}
+
+const PROJECTS: Project[] = [
+  {
+    id: 'deepfake',
+    cardTitle: 'Deepfake Detection System',
+    modalTitle: 'AI-Based DeepFake Face Detection',
+    status: 'completed',
+    description:
+      'AI-powered web app that detects real vs. AI-generated human faces. Achieved 99.7% test accuracy and ROC-AUC of 0.999 using Swin Transformer v2 and Xception architectures, trained on 140,000 images.',
+    tech: [
+      'Python',
+      'PyTorch',
+      'TIMM',
+      'Swin Transformer v2',
+      'Flask',
+      'HTML/CSS/JS',
+      'scikit-learn',
+      'Jupyter Notebook',
+    ],
+    roleBadge: 'Flask Web App + Model Engineering',
+    github: 'https://github.com/ahmed-shamh/AI-Based-Real-vs-Fake-Face-Classification',
+    modalIntro:
+      'As part of a 6-member team, I contributed to building a deepfake detection system that classifies real vs. AI-generated human faces, achieving 99.7% test accuracy and a ROC-AUC of 0.999. The system was trained on the Kaggle 140k Real and Fake Faces dataset using two architectures: Xception and Swin Transformer v2.',
+    contributions: [
+      {
+        title: 'GUI / Web Application:',
+        body: 'Built the full Flask web app (HTML/CSS/JS) that allows users to upload a face image and receive real-time Real/Fake probability predictions — making the model production-accessible beyond a Jupyter notebook.',
+      },
+      {
+        title: 'Swin Transformer v2 Engineering:',
+        body: 'Implemented the Swin Transformer v2 model architecture with a custom classification head (Dropout + Linear layer) using PyTorch and the TIMM library.',
+      },
+      {
+        title: 'Training Pipeline & Checkpoints:',
+        body: 'Designed a robust training pipeline with AdamW optimizer (differential LRs: backbone 1e-5, head 1e-4), ReduceLROnPlateau scheduling, early stopping, and a full checkpoint/resume system storing epoch, model state, optimizer state, scheduler state, and AMP scaler state.',
+      },
+    ],
+    keyResults: [
+      { label: 'Test Accuracy', value: '99.7%' },
+      { label: 'Validation Accuracy', value: '99.81%' },
+      { label: 'ROC-AUC', value: '0.999' },
+      { label: 'Dataset', value: '140,000 images (70k real + 70k fake)' },
+    ],
+  },
+  {
+    id: 'minicloud',
+    cardTitle: 'MiniCloud Deployment',
+    modalTitle: 'MiniCloud Deployment',
+    status: 'in_progress',
+    description:
+      'GitHub webhook-based automated deployment system with automatic deployment on push, Docker image build & container restart, and deployment log tracking.',
+    tech: ['FastAPI', 'Docker', 'GitHub Webhooks', 'AWS EC2', 'Nginx'],
+    roleBadge: 'DevOps Lead',
+    github: '#',
+    modalIntro:
+      'A self-hosted deployment automation system that listens for GitHub webhook events and triggers a full deployment pipeline on an AWS EC2 instance. When code is pushed to the main branch, the system automatically builds a new Docker image, restarts the container, and logs the deployment result.',
+    myRole:
+      'Sole developer — responsible for the full system design, FastAPI webhook server, Docker automation scripts, Nginx reverse proxy configuration, and AWS EC2 setup.',
+    learning:
+      'Webhook-driven deployment patterns, Docker container lifecycle management, and production server hardening on Linux.',
+  },
+  {
+    id: 'telecom',
+    cardTitle: 'Cloud-Native Telecom Platform',
+    modalTitle: 'Cloud-Native Telecom Management Platform',
+    status: 'in_progress',
+    description:
+      'A microservices-based telecom management platform built as part of the Digital Egypt Pioneers Initiative (DEPI). Simulates core telecom services including account management, billing, and usage monitoring — deployed on AWS using a fully automated DevOps pipeline.',
+    tech: [
+      'Jenkins',
+      'Docker',
+      'Kubernetes',
+      'Ansible',
+      'AWS EC2',
+      'AWS RDS',
+      'AWS S3',
+      'Prometheus',
+      'Grafana',
+      'Nginx',
+    ],
+    roleBadge: 'Team Leader / CI-CD Engineer',
+    github: '#',
+    modalIntro:
+      'A team project built as part of the Digital Egypt Pioneers Initiative (DEPI) internship program under the Ministry of Communications. The platform simulates the core services of a telecom operator — customers can manage accounts, subscribe to packages, recharge balance, monitor usage, and handle billing. Built on microservices architecture and deployed using modern DevOps practices.',
+    team: [
+      'Mohamed Elhadad — Team Leader / CI-CD Engineer',
+      'Fathy Ibrahim — AWS Cloud Infrastructure Engineer',
+      'Yossif Farahat — AWS Deployment & Kubernetes Engineer',
+      'Abdallah Elsayed — Automation & Ansible Engineer',
+      'Mohamed Hatem — Monitoring & Logging Engineer',
+      'Moamen Osama — Testing, Documentation & Deployment Support',
+    ],
+    myRole:
+      'As Team Leader and CI-CD Engineer, I am responsible for designing and implementing the Jenkins pipeline that automates building, testing, Docker image creation, pushing to registry, Kubernetes deployment, health checks, and rollback on failure. I also coordinate task distribution across the team and manage the GitHub repository workflow.',
+    pipeline:
+      'Developer → GitHub → Jenkins (Run Tests → Build Docker Images → Push to Registry → Deploy to Kubernetes → Health Checks → Rollback if Failed)',
+    deadline: 'Final Deadline: 20 June 2026',
+  },
+];
 
 const SKILLS = [
   {
     category: 'Cloud',
     icon: '☁',
-    items: ['AWS EC2', 'S3', 'IAM', 'VPC', 'Security Groups', 'Load Balancing', 'Auto Scaling'],
+    proficient: ['AWS EC2', 'S3', 'IAM', 'VPC', 'Security Groups'],
+    familiar: ['Load Balancing', 'Auto Scaling'],
   },
   {
     category: 'Containers & Orchestration',
     icon: '⬡',
-    items: ['Docker', 'Docker Compose', 'Kubernetes', 'Pods', 'Deployments', 'Services'],
+    proficient: ['Docker', 'Docker Compose', 'Kubernetes'],
+    familiar: ['Pods', 'Deployments', 'Services'],
   },
   {
     category: 'CI/CD',
     icon: '⟳',
-    items: ['GitHub Actions', 'Jenkins', 'Git', 'Git Workflows', 'Webhook Automation'],
+    proficient: ['GitHub Actions', 'Git', 'Git Workflows'],
+    familiar: ['Jenkins', 'Webhook Automation'],
   },
   {
     category: 'Infrastructure & Automation',
     icon: '⚙',
-    items: ['Ansible', 'Terraform', 'Bash Scripting'],
+    proficient: ['Ansible', 'Bash Scripting'],
+    familiar: ['Terraform'],
   },
   {
     category: 'Monitoring & Logging',
     icon: '◈',
-    items: ['Prometheus', 'Grafana', 'Log Analysis'],
+    proficient: ['Prometheus', 'Grafana'],
+    familiar: ['Log Analysis'],
   },
   {
     category: 'Networking & Systems',
     icon: '⬡',
-    items: ['Linux (Ubuntu Server)', 'Nginx', 'TCP/IP', 'Firewall', 'Security Groups'],
-  },
-];
-
-const PROJECTS = [
-  {
-    title: 'MiniCloud Deployment',
-    description:
-      'Built a GitHub webhook-based automated deployment system with automatic deployment on push, Docker image build & container restart, and deployment logs tracking.',
-    tech: ['FastAPI', 'Docker', 'GitHub Webhooks', 'AWS EC2', 'Nginx'],
-    tag: 'Cloud / Automation',
-  },
-  {
-    title: 'CI/CD Pipeline Automation',
-    description:
-      'Designed a complete CI/CD workflow using GitHub Actions with automated build and testing, Docker image creation, deployment to AWS EC2, and continuous deployment workflow.',
-    tech: ['GitHub Actions', 'Docker', 'AWS EC2'],
-    tag: 'DevOps',
-  },
-  {
-    title: 'Deepfake Detection System',
-    description:
-      'Developed a deep learning–based web application to detect AI-manipulated media. Trained a CNN model on Kaggle datasets with a real-time prediction system for uploaded media.',
-    tech: ['PyTorch', 'CNN', 'Python', 'HTML', 'CSS', 'JavaScript'],
-    tag: 'AI / ML',
+    proficient: ['Linux (Ubuntu Server)', 'Nginx', 'TCP/IP'],
+    familiar: ['Firewall', 'Security Groups'],
   },
 ];
 
@@ -112,11 +223,37 @@ const EDUCATION = [
 ];
 
 const CERTIFICATIONS = [
-  { title: 'CCNA Certification', issuer: 'National Telecommunication Institute (NTI)' },
-  { title: 'DevOps Internship', issuer: 'Digital Egypt Pioneers Initiative — Ministry of Communications' },
+  {
+    title: 'AI Fluency Framework & Foundations',
+    issuer: 'Anthropic',
+    year: '2026',
+    featured: true,
+    note: 'Issued by the creators of Claude AI',
+  },
+  {
+    title: 'CCNA Certification',
+    issuer: 'National Telecommunication Institute (NTI)',
+    year: '2026',
+    featured: false,
+  },
+  {
+    title: 'DevOps Internship',
+    issuer: 'Digital Egypt Pioneers Initiative — Ministry of Communications',
+    year: '2026',
+    featured: false,
+  },
 ];
 
-// ── Scroll Reveal Hook ────────────────────────────────────────────────────────
+const QUOTES = [
+  {
+    text: "Infrastructure as code isn't just a practice — it's a mindset shift. When you can version-control your entire environment, you stop fearing change and start managing it.",
+  },
+  {
+    text: "The best deployment is the one nobody notices. Automation isn't about removing humans — it's about letting humans focus on what matters.",
+  },
+];
+
+// ── Scroll reveal ─────────────────────────────────────────────────────────────
 
 function useReveal() {
   useEffect(() => {
@@ -137,7 +274,7 @@ function useReveal() {
   }, []);
 }
 
-// ── Section Wrapper ───────────────────────────────────────────────────────────
+// ── Section chrome ────────────────────────────────────────────────────────────
 
 function Section({ id, children, className = '' }: { id?: string; children: React.ReactNode; className?: string }) {
   return (
@@ -151,30 +288,28 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-3 mb-4">
       <span className="w-2 h-2 rounded-full bg-[#7C3AED] pulse-dot" />
-      <span className="font-mono text-xs tracking-widest uppercase text-[rgba(226,232,240,0.4)]">{children}</span>
+      <span className="font-mono text-xs tracking-widest uppercase text-[color:var(--label)]">{children}</span>
     </div>
   );
 }
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="font-mono text-3xl md:text-4xl font-bold text-white mb-12 leading-tight">
-      {children}
-    </h2>
+    <h2 className="font-mono text-3xl md:text-4xl font-bold text-[color:var(--body)] mb-12 leading-tight">{children}</h2>
   );
 }
 
-// ── Terminal Log Animation ────────────────────────────────────────────────────
+// ── Terminal block ────────────────────────────────────────────────────────────
 
 const TERMINAL_LINES = [
   { text: '$ whoami', delay: 0, color: 'text-[#C4B5FD]' },
-  { text: 'Mohamed Ibrahim', delay: 400, color: 'text-white' },
+  { text: 'Mohamed Elhadad', delay: 400, color: 'text-white' },
   { text: '$ cat role.txt', delay: 900, color: 'text-[#C4B5FD]' },
   { text: 'Junior DevOps & Cloud Engineer', delay: 1300, color: 'text-[#86EFAC]' },
   { text: '$ cat focus.txt', delay: 1800, color: 'text-[#C4B5FD]' },
   { text: 'Automation · Cloud · Containers · Security', delay: 2200, color: 'text-[rgba(226,232,240,0.7)]' },
   { text: '$ status', delay: 2700, color: 'text-[#C4B5FD]' },
-  { text: '✓ Available for opportunities', delay: 3100, color: 'text-[#86EFAC]' },
+  { text: '✓ Available for remote internships & freelance work', delay: 3100, color: 'text-[#86EFAC]' },
 ];
 
 function TerminalBlock() {
@@ -187,15 +322,14 @@ function TerminalBlock() {
   }, []);
 
   return (
-    <div className="glass-panel rounded-lg overflow-hidden violet-glow w-full max-w-xl">
-      {/* Window chrome */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-[rgba(124,58,237,0.15)] bg-[rgba(9,9,11,0.6)]">
+    <div className="glass-panel terminal-window rounded-lg overflow-hidden w-full max-w-xl border border-[rgba(124,58,237,0.2)]">
+      <div className="terminal-chrome flex items-center gap-2 px-4 py-3">
         <div className="w-3 h-3 rounded-full bg-[#FF5F57]" />
         <div className="w-3 h-3 rounded-full bg-[#FFBD2E]" />
         <div className="w-3 h-3 rounded-full bg-[#28CA41]" />
-        <span className="ml-3 font-mono text-xs text-[rgba(226,232,240,0.3)]">portfolio.sh</span>
+        <span className="ml-3 font-mono text-xs text-[rgba(226,232,240,0.35)]">portfolio.sh</span>
       </div>
-      <div className="p-5 font-mono text-sm space-y-1.5 min-h-[220px] bg-[rgba(9,9,11,0.3)]">
+      <div className="terminal-body p-5 font-mono text-sm space-y-1.5 min-h-[220px]">
         {TERMINAL_LINES.slice(0, visibleCount).map((line, i) => (
           <div key={i} className={`${line.color} transition-all duration-300`}>
             {line.text}
@@ -209,7 +343,158 @@ function TerminalBlock() {
   );
 }
 
-// ── Contact Form ──────────────────────────────────────────────────────────────
+// ── Project modal ─────────────────────────────────────────────────────────────
+
+function ProjectModal({ project, onClose }: { project: Project | null; onClose: () => void }) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!project) return undefined;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const t = window.setTimeout(() => closeRef.current?.focus(), 0);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prev;
+      window.clearTimeout(t);
+    };
+  }, [project, onClose]);
+
+  if (!project) return null;
+
+  const githubIsPlaceholder = project.github === '#';
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+      <div
+        role="presentation"
+        className="absolute inset-0 cursor-pointer bg-black/50 backdrop-blur-sm modal-backdrop-enter dark:bg-black/75"
+        onClick={onClose}
+      />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="project-modal-title"
+        className="relative z-10 max-h-[min(90vh,720px)] w-full max-w-[620px] overflow-y-auto rounded-lg border border-[#e2e8f0] bg-white text-[#1a1d27] shadow-2xl modal-panel-enter transition-colors duration-300 dark:border-[#2a2d3a] dark:bg-[#1a1d27] dark:text-[#e2e8f0]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="sticky top-0 flex justify-end rounded-t-lg border-b border-[#e2e8f0] bg-white/95 px-4 py-3 backdrop-blur-sm dark:border-[#2a2d3a] dark:bg-[#1a1d27]/95">
+          <button
+            ref={closeRef}
+            type="button"
+            onClick={onClose}
+            className="rounded-md p-2 text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#7C3AED] dark:text-[#e2e8f0] dark:hover:bg-[#252837] dark:hover:text-white"
+            aria-label="Close"
+          >
+            <XMarkIcon className="h-5 w-5" aria-hidden />
+          </button>
+        </div>
+        <div className="space-y-5 px-6 pb-8 pt-2">
+          <h2 id="project-modal-title" className="pr-8 font-mono text-xl font-bold text-[#1a1d27] dark:text-[#e2e8f0]">
+            {project.modalTitle}
+          </h2>
+          <p className="font-sans text-sm leading-relaxed text-zinc-700 dark:text-[#cbd5e1]">{project.modalIntro}</p>
+
+          {project.contributions && project.contributions.length > 0 && (
+            <div>
+              <h3 className="mb-3 font-mono text-xs font-semibold uppercase tracking-widest text-zinc-500 dark:text-[#94a3b8]">
+                My Contributions
+              </h3>
+              <ul className="list-none space-y-3">
+                {project.contributions.map((c) => (
+                  <li key={c.title} className="font-sans text-sm leading-relaxed text-zinc-700 dark:text-[#cbd5e1]">
+                    <span className="font-semibold text-[#1a1d27] dark:text-[#e2e8f0]">{c.title}</span> {c.body}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {project.keyResults && project.keyResults.length > 0 && (
+            <div>
+              <h3 className="mb-3 font-mono text-xs font-semibold uppercase tracking-widest text-zinc-500 dark:text-[#94a3b8]">
+                Key Results
+              </h3>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {project.keyResults.map((r) => (
+                  <div
+                    key={r.label}
+                    className="rounded-md border border-[#e2e8f0] bg-[#f8fafc] px-4 py-3 font-mono text-xs dark:border-[#2a2d3a] dark:bg-[#252837]"
+                  >
+                    <p className="mb-1 text-zinc-500 dark:text-[#94a3b8]">{r.label}</p>
+                    <p className="text-sm font-semibold text-[#1a1d27] dark:text-[#e2e8f0]">{r.value}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {project.myRole && (
+            <div>
+              <h3 className="mb-2 font-mono text-xs font-semibold uppercase tracking-widest text-zinc-500 dark:text-[#94a3b8]">
+                My Role
+              </h3>
+              <p className="font-sans text-sm leading-relaxed text-zinc-700 dark:text-[#cbd5e1]">{project.myRole}</p>
+            </div>
+          )}
+
+          {project.learning && (
+            <div>
+              <h3 className="mb-2 font-mono text-xs font-semibold uppercase tracking-widest text-zinc-500 dark:text-[#94a3b8]">
+                What I&apos;m learning through this project
+              </h3>
+              <p className="font-sans text-sm leading-relaxed text-zinc-700 dark:text-[#cbd5e1]">{project.learning}</p>
+            </div>
+          )}
+
+          {project.team && project.team.length > 0 && (
+            <div>
+              <h3 className="mb-2 font-mono text-xs font-semibold uppercase tracking-widest text-zinc-500 dark:text-[#94a3b8]">
+                Team: 6 members
+              </h3>
+              <ul className="list-inside list-disc space-y-1 font-sans text-sm text-zinc-700 dark:text-[#cbd5e1]">
+                {project.team.map((m) => (
+                  <li key={m}>{m}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {project.pipeline && (
+            <div>
+              <h3 className="mb-2 font-mono text-xs font-semibold uppercase tracking-widest text-zinc-500 dark:text-[#94a3b8]">
+                CI/CD Pipeline
+              </h3>
+              <p className="break-words rounded-md border border-[#e2e8f0] bg-[#f8fafc] p-3 font-mono text-xs leading-relaxed text-zinc-800 dark:border-[#2a2d3a] dark:bg-[#252837] dark:text-[#e2e8f0]">
+                {project.pipeline}
+              </p>
+            </div>
+          )}
+
+          {project.deadline && (
+            <p className="font-mono text-sm text-zinc-600 dark:text-[#94a3b8]">{project.deadline}</p>
+          )}
+
+          <div className="flex flex-wrap gap-3 pt-2">
+            {githubIsPlaceholder ? (
+              <span className="inline-flex items-center rounded-lg border border-zinc-300 px-4 py-2 font-mono text-xs text-zinc-500 dark:border-[#2a2d3a] dark:text-[#8892a4]">
+                GitHub (link coming soon)
+              </span>
+            ) : (
+              <GitHubCtaButton href={project.github} size="lg" className="ring-offset-white dark:ring-offset-[#1a1d27]" />
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Contact form ────────────────────────────────────────────────────────────
 
 function ContactForm() {
   const [form, setForm] = useState({ name: '', email: '', message: '' });
@@ -251,11 +536,11 @@ function ContactForm() {
 
   return sent ? (
     <div className="glass-panel rounded-lg p-8 text-center">
-      <div className="w-12 h-12 rounded-full bg-[rgba(124,58,237,0.2)] flex items-center justify-center mx-auto mb-4">
-        <span className="text-[#86EFAC] text-xl">✓</span>
+      <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[rgba(124,58,237,0.2)]">
+        <span className="text-xl text-[#86EFAC]">✓</span>
       </div>
-      <p className="font-mono text-[#86EFAC] text-sm">Message transmitted successfully.</p>
-      <p className="font-mono text-[rgba(226,232,240,0.4)] text-xs mt-2">I&apos;ll get back to you soon.</p>
+      <p className="font-mono text-sm text-[#86EFAC]">Message transmitted successfully.</p>
+      <p className="mt-2 font-mono text-xs text-[color:var(--label)]">I&apos;ll get back to you soon.</p>
       <button
         type="button"
         className="btn-ghost mt-6 px-5 py-2.5 rounded-sm font-mono text-xs tracking-widest uppercase inline-flex items-center gap-2"
@@ -272,23 +557,17 @@ function ContactForm() {
   ) : (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="hidden" aria-hidden="true">
-        <label className="block font-mono text-xs text-[rgba(226,232,240,0.4)] mb-1.5 tracking-widest uppercase">
+        <label className="mb-1.5 block font-mono text-xs uppercase tracking-widest text-[color:var(--label)]">
           Website
         </label>
-        <input
-          tabIndex={-1}
-          autoComplete="off"
-          value={hp}
-          onChange={(e) => setHp(e.target.value)}
-          className="w-full"
-        />
+        <input tabIndex={-1} autoComplete="off" value={hp} onChange={(e) => setHp(e.target.value)} className="w-full" />
       </div>
       {[
         { id: 'name', label: 'name', type: 'text', placeholder: 'Your name' },
         { id: 'email', label: 'email', type: 'email', placeholder: 'your@email.com' },
       ].map((field) => (
         <div key={field.id}>
-          <label className="block font-mono text-xs text-[rgba(226,232,240,0.4)] mb-1.5 tracking-widest uppercase">
+          <label className="mb-1.5 block font-mono text-xs uppercase tracking-widest text-[color:var(--label)]">
             {field.label}
           </label>
           <input
@@ -297,12 +576,12 @@ function ContactForm() {
             placeholder={field.placeholder}
             value={form[field.id as 'name' | 'email']}
             onChange={(e) => setForm((p) => ({ ...p, [field.id]: e.target.value }))}
-            className="w-full glass-panel rounded-sm px-4 py-3 font-mono text-sm text-white placeholder-[rgba(226,232,240,0.2)] focus:outline-none focus:border-[rgba(124,58,237,0.5)] transition-colors"
+            className="glass-panel w-full rounded-sm px-4 py-3 font-mono text-sm text-[color:var(--body)] placeholder:text-slate-400/90 transition-colors focus:outline-none focus:ring-2 focus:ring-[rgba(124,58,237,0.35)] dark:placeholder:text-slate-500"
           />
         </div>
       ))}
       <div>
-        <label className="block font-mono text-xs text-[rgba(226,232,240,0.4)] mb-1.5 tracking-widest uppercase">
+        <label className="mb-1.5 block font-mono text-xs uppercase tracking-widest text-[color:var(--label)]">
           message
         </label>
         <textarea
@@ -311,7 +590,7 @@ function ContactForm() {
           placeholder="What would you like to discuss?"
           value={form.message}
           onChange={(e) => setForm((p) => ({ ...p, message: e.target.value }))}
-          className="w-full glass-panel rounded-sm px-4 py-3 font-mono text-sm text-white placeholder-[rgba(226,232,240,0.2)] focus:outline-none focus:border-[rgba(124,58,237,0.5)] transition-colors resize-none"
+          className="glass-panel w-full resize-none rounded-sm px-4 py-3 font-mono text-sm text-[color:var(--body)] placeholder:text-slate-400/90 transition-colors focus:outline-none focus:ring-2 focus:ring-[rgba(124,58,237,0.35)] dark:placeholder:text-slate-500"
         />
       </div>
       {error && <p className="font-mono text-xs text-[#FCA5A5]">{error}</p>}
@@ -330,101 +609,121 @@ function ContactForm() {
 
 export default function PortfolioPage() {
   useReveal();
+  const [openProject, setOpenProject] = useState<Project | null>(null);
+  const closeModal = useCallback(() => setOpenProject(null), []);
 
   return (
-    <div id="top" className="bg-void min-h-screen noise-overlay">
-      {/* ── Header ── */}
-      <header className="fixed top-0 left-0 right-0 z-50 glass-panel border-b border-[rgba(124,58,237,0.15)]">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+    <div id="top" className="min-h-screen bg-void noise-overlay">
+      <ProjectModal project={openProject} onClose={closeModal} />
+
+      <header className="fixed left-0 right-0 top-0 z-50 border-b border-[color:var(--glass-border)] glass-panel">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <a href="#top" className="flex items-center gap-3">
-            <AppLogo size={24} iconName="CommandLineIcon" text="Mohamed Ibrahim" className="text-white" />
+            <AppLogo size={24} iconName="CommandLineIcon" text="Mohamed Elhadad" className="text-[color:var(--body)]" />
           </a>
-          <nav className="hidden md:flex items-center gap-8 font-mono text-xs tracking-widest uppercase">
+          <nav className="hidden items-center gap-8 font-mono text-xs uppercase tracking-widest md:flex" aria-label="Primary">
             {[
+              { label: 'Home', href: '#top' },
               { label: 'Skills', href: '#skills' },
               { label: 'Projects', href: '#projects' },
               { label: 'Services', href: '#services' },
-              { label: 'Contact', href: '#contact' },
             ].map((link) => (
               <a
                 key={link.label}
                 href={link.href}
-                className="text-[rgba(226,232,240,0.5)] hover:text-[#C4B5FD] transition-colors duration-300"
+                className="text-[color:var(--body-faint)] transition-colors duration-300 hover:text-[#7C3AED] dark:hover:text-[#C4B5FD]"
               >
                 {link.label}
               </a>
             ))}
           </nav>
-          <a
-            href="#contact"
-            className="btn-ghost font-mono text-xs tracking-widest uppercase px-5 py-2.5 rounded-sm hidden md:flex items-center gap-2"
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-[#7C3AED] pulse-dot" />
-            Hire Me
-          </a>
+          <div className="flex items-center gap-0.5 md:gap-2">
+            <ThemeToggle />
+            <a
+              href="#contact"
+              className="btn-ghost hidden items-center gap-2 rounded-sm px-5 py-2.5 font-mono text-xs uppercase tracking-widest md:inline-flex"
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-[#7C3AED] pulse-dot" />
+              Hire Me
+            </a>
+          </div>
         </div>
       </header>
 
       <main>
-        {/* ── Hero ── */}
         <Section className="min-h-screen flex flex-col items-center justify-center pt-24">
           <div className="absolute inset-0 bg-radial-violet pointer-events-none" />
           <div className="absolute inset-0 grid-lines pointer-events-none opacity-40" />
 
           <div className="relative z-10 w-full max-w-5xl mx-auto">
-            {/* Terminal badge */}
             <div className="flex justify-center mb-10">
-              <div className="glass-panel px-4 py-2 rounded-sm flex items-center gap-3 font-mono text-xs text-[rgba(226,232,240,0.5)]">
+              <div className="glass-panel flex items-center gap-3 rounded-sm px-4 py-2 font-mono text-xs text-[color:var(--body-faint)]">
                 <span className="w-2 h-2 rounded-full bg-[#7C3AED] pulse-dot" />
                 <span>portfolio ~ </span>
-                <span className="text-[#C4B5FD]">./init_profile.sh</span>
+                <span className="text-[#7C3AED] dark:text-[#C4B5FD]">./init_profile.sh</span>
                 <span className="text-[#7C3AED] animate-[blink_1s_step-end_infinite]">▋</span>
               </div>
             </div>
 
             <div className="flex flex-col lg:flex-row items-center gap-12">
-              {/* Text */}
-              <div className="flex-1 text-center lg:text-left">
-                <p className="font-mono text-xs tracking-widest uppercase text-[rgba(226,232,240,0.4)] mb-4">
-                  Junior DevOps &amp; Cloud Engineer
-                </p>
-                <h1 className="font-mono text-4xl md:text-6xl font-bold text-white leading-tight tracking-tight mb-6">
-                  Mohamed{' '}
-                  <span className="text-[#C4B5FD] text-glow">Elhadad</span>
-                </h1>
-                <p className="font-sans text-[rgba(226,232,240,0.6)] text-lg leading-relaxed max-w-lg mb-8">
-                  Passionate about cloud infrastructure, automation, and containerized deployments.
-                  Building scalable, secure, and efficient systems using modern DevOps practices.
-                </p>
-                <div className="flex flex-wrap gap-4 justify-center lg:justify-start">
-                  <a
-                    href="#contact"
-                    className="btn-solid px-6 py-3 rounded-sm font-mono text-sm tracking-widest uppercase"
-                  >
-                    Get in Touch
-                  </a>
-                  <a
-                    href="#projects"
-                    className="btn-ghost px-6 py-3 rounded-sm font-mono text-sm tracking-widest uppercase"
-                  >
-                    View Projects
-                  </a>
+              <div className="flex-1 flex flex-col items-center lg:items-start w-full">
+                <div className="mb-6">
+                  <Image
+                    src="/profile.jpg"
+                    alt="Mohamed Elhadad"
+                    width={132}
+                    height={132}
+                    className="rounded-full object-cover border-2 border-[rgba(124,58,237,0.45)] shadow-[0_0_28px_rgba(124,58,237,0.22)]"
+                    priority
+                  />
                 </div>
-                {/* Quick info */}
-                <div className="flex flex-wrap gap-6 mt-8 justify-center lg:justify-start font-mono text-xs text-[rgba(226,232,240,0.4)]">
-                  <span className="flex items-center gap-2">
-                    <span className="text-[#7C3AED]">◈</span> Tanta, Egypt
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <span className="text-[#7C3AED]">◈</span> AI Student @ Menofia University
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <span className="text-[#86EFAC]">●</span> Open to opportunities
-                  </span>
+                <div className="text-center lg:text-left w-full">
+                  <p className="mb-4 font-mono text-xs uppercase tracking-widest text-[color:var(--label)]">
+                    Junior DevOps &amp; Cloud Engineer
+                  </p>
+                  <h1 className="mb-6 font-mono text-4xl font-bold leading-tight tracking-tight text-[color:var(--body)] md:text-6xl">
+                    Mohamed <span className="text-[#7C3AED] text-glow dark:text-[#C4B5FD]">Elhadad</span>
+                  </h1>
+                  <p className="mb-8 max-w-lg font-sans text-lg leading-relaxed text-[color:var(--body-muted)]">
+                    AI student with a Cybersecurity specialization — building DevOps and cloud skills at the intersection
+                    of security and automation. Open to remote internships and freelance DevOps work.
+                  </p>
+                  <div className="flex flex-wrap gap-4 justify-center lg:justify-start">
+                    <a
+                      href="#contact"
+                      className="btn-solid px-6 py-3 rounded-sm font-mono text-sm tracking-widest uppercase inline-flex items-center justify-center"
+                    >
+                      Get in Touch
+                    </a>
+                    <a
+                      href="#projects"
+                      className="btn-ghost px-6 py-3 rounded-sm font-mono text-sm tracking-widest uppercase inline-flex items-center justify-center"
+                    >
+                      View Projects
+                    </a>
+                    <a
+                      href="/cv.pdf"
+                      download
+                      className="btn-ghost px-6 py-3 rounded-sm font-mono text-sm tracking-widest uppercase inline-flex items-center justify-center gap-2 border-dashed"
+                    >
+                      <ArrowDownTrayIcon className="h-4 w-4 shrink-0" aria-hidden />
+                      Download CV
+                    </a>
+                  </div>
+                  <div className="mt-8 flex flex-wrap justify-center gap-6 font-mono text-xs text-[color:var(--label)] lg:justify-start">
+                    <span className="flex items-center gap-2">
+                      <span className="text-[#7C3AED]">◈</span> Tanta, Egypt
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <span className="text-[#7C3AED]">◈</span> AI Student @ Menofia University
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <span className="text-[#86EFAC]">●</span> Available for remote internships &amp; freelance work
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              {/* Terminal block */}
               <div className="flex-shrink-0">
                 <TerminalBlock />
               </div>
@@ -432,13 +731,12 @@ export default function PortfolioPage() {
           </div>
         </Section>
 
-        {/* ── Skills ── */}
         <Section id="skills">
           <div className="max-w-6xl mx-auto">
             <div className="reveal">
               <SectionLabel>Technical Skills</SectionLabel>
               <SectionTitle>
-                Tools &amp; <span className="text-[#C4B5FD]">Technologies</span>
+                Tools &amp; <span className="text-[#7C3AED] dark:text-[#C4B5FD]">Technologies</span>
               </SectionTitle>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -448,110 +746,151 @@ export default function PortfolioPage() {
                   className={`reveal glass-panel glass-panel-hover rounded-lg p-6 delay-${Math.min((i + 1) * 100, 500)}`}
                 >
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-8 h-8 rounded-sm bg-[rgba(124,58,237,0.15)] flex items-center justify-center text-[#C4B5FD] text-base">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-sm bg-[var(--tag-purple-bg)] text-base text-[#7C3AED] dark:text-[#C4B5FD]">
                       {skill.icon}
                     </div>
-                    <h3 className="font-mono text-sm font-semibold text-white">{skill.category}</h3>
+                    <h3 className="font-mono text-sm font-semibold text-[color:var(--body)]">{skill.category}</h3>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    {skill.items.map((item) => (
+                  <p className="mb-2 font-mono text-[10px] uppercase tracking-widest text-[color:var(--label)]">Proficient</p>
+                  <div className="mb-4 flex flex-wrap gap-2">
+                    {skill.proficient.map((item) => (
                       <span
                         key={item}
-                        className="font-mono text-xs px-2.5 py-1 rounded-sm bg-[rgba(124,58,237,0.1)] text-[rgba(196,181,253,0.8)] border border-[rgba(124,58,237,0.15)]"
+                        className="rounded-sm border border-[rgba(124,58,237,0.2)] bg-[var(--tag-purple-bg)] px-2.5 py-1 font-mono text-xs text-[var(--tag-purple-text)]"
                       >
                         {item}
                       </span>
                     ))}
                   </div>
+                  <div className="mt-1 border-t border-[rgba(124,58,237,0.12)] pt-3">
+                    <p className="mb-2 font-mono text-[10px] uppercase tracking-widest text-[color:var(--label)]">Familiar</p>
+                    <div className="flex flex-wrap gap-2">
+                      {skill.familiar.map((item) => (
+                        <span
+                          key={item}
+                          className="rounded-sm border border-[rgba(124,58,237,0.12)] bg-[var(--tag-muted-bg)] px-2.5 py-1 font-mono text-xs text-[var(--tag-muted-text)]"
+                        >
+                          {item}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
         </Section>
 
-        {/* ── Experience / Projects ── */}
-        <Section id="projects" className="bg-[rgba(26,26,46,0.2)]">
+        <Section id="projects" className="section-band">
           <div className="absolute inset-0 bg-radial-violet-bottom pointer-events-none opacity-50" />
           <div className="relative z-10 max-w-6xl mx-auto">
             <div className="reveal">
               <SectionLabel>Projects &amp; Experience</SectionLabel>
               <SectionTitle>
-                What I&apos;ve <span className="text-[#C4B5FD]">Built</span>
+                What I&apos;ve <span className="text-[#7C3AED] dark:text-[#C4B5FD]">Built</span>
               </SectionTitle>
             </div>
             <div className="space-y-6">
               {PROJECTS.map((project, i) => (
-                <div
-                  key={project.title}
-                  className={`reveal glass-panel glass-panel-hover rounded-lg p-7 delay-${Math.min((i + 1) * 100, 300)}`}
+                <article
+                  key={project.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setOpenProject(project)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setOpenProject(project);
+                    }
+                  }}
+                  className={`reveal glass-panel glass-panel-hover w-full cursor-pointer rounded-lg p-7 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#7C3AED] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--void)] delay-${Math.min((i + 1) * 100, 300)}`}
                 >
-                  <div className="flex flex-col md:flex-row md:items-start gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-3">
-                        <span className="font-mono text-[10px] px-2.5 py-1 rounded-sm bg-[rgba(124,58,237,0.15)] text-[#C4B5FD] border border-[rgba(124,58,237,0.2)] tracking-widest uppercase">
-                          {project.tag}
+                  <div className="flex flex-col gap-4 md:flex-row md:items-start">
+                    <div className="w-full flex-1">
+                      <div className="mb-3 flex flex-wrap items-center gap-2">
+                        <span
+                          className="rounded-full border px-2.5 py-1 font-mono text-[10px] uppercase tracking-wide"
+                          style={
+                            project.status === 'completed'
+                              ? { background: '#eaf3de', color: '#27500a', borderColor: 'rgba(39,80,10,0.2)' }
+                              : { background: '#faeeda', color: '#633806', borderColor: 'rgba(99,56,6,0.2)' }
+                          }
+                        >
+                          {project.status === 'completed' ? 'Completed' : 'In Progress'}
+                        </span>
+                        <span className="rounded-sm border border-[rgba(124,58,237,0.2)] bg-[var(--tag-purple-bg)] px-2.5 py-1 font-mono text-[10px] uppercase tracking-widest text-[#7C3AED] dark:text-[#C4B5FD]">
+                          {project.roleBadge}
                         </span>
                       </div>
-                      <h3 className="font-mono text-xl font-bold text-white mb-3">{project.title}</h3>
-                      <p className="font-sans text-[rgba(226,232,240,0.6)] text-sm leading-relaxed mb-4">
-                        {project.description}
-                      </p>
+                      <h3 className="mb-3 font-mono text-xl font-bold text-[color:var(--body)]">{project.cardTitle}</h3>
+                      <p className="mb-4 font-sans text-sm leading-relaxed text-[color:var(--body-muted)]">{project.description}</p>
+                      <p className="mb-2 font-mono text-[10px] text-[color:var(--label)]">Click for full details</p>
                       <div className="flex flex-wrap gap-2">
                         {project.tech.map((t) => (
                           <span
                             key={t}
-                            className="font-mono text-xs px-2.5 py-1 rounded-sm bg-[rgba(9,9,11,0.6)] text-[rgba(226,232,240,0.5)] border border-[rgba(124,58,237,0.1)]"
+                            className="rounded-sm border border-[rgba(124,58,237,0.12)] bg-[var(--tag-muted-bg)] px-2.5 py-1 font-mono text-xs text-[var(--tag-muted-text)]"
                           >
                             {t}
                           </span>
                         ))}
                       </div>
+                      <div
+                        className="mt-5 flex flex-wrap items-center gap-3"
+                        onClick={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => e.stopPropagation()}
+                        role="presentation"
+                      >
+                        {project.github !== '#' ? (
+                          <GitHubCtaButton href={project.github} size="sm" onClick={(e) => e.stopPropagation()} />
+                        ) : (
+                          <span className="rounded-lg border border-[color:var(--glass-border)] px-3 py-1.5 font-mono text-xs text-[color:var(--label)]">
+                            GitHub (link coming soon)
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex-shrink-0 w-10 h-10 rounded-sm bg-[rgba(124,58,237,0.1)] border border-[rgba(124,58,237,0.2)] flex items-center justify-center">
-                      <span className="text-[#C4B5FD] font-mono text-lg font-bold">{i + 1}</span>
+                    <div className="pointer-events-none flex h-10 w-10 shrink-0 items-center justify-center rounded-sm border border-[rgba(124,58,237,0.2)] bg-[var(--tag-purple-bg)]">
+                      <span className="font-mono text-lg font-bold text-[#7C3AED] dark:text-[#C4B5FD]">{i + 1}</span>
                     </div>
                   </div>
-                </div>
+                </article>
               ))}
             </div>
           </div>
         </Section>
 
-        {/* ── Education ── */}
         <Section id="education">
           <div className="max-w-6xl mx-auto">
             <div className="reveal">
               <SectionLabel>Education &amp; Certifications</SectionLabel>
               <SectionTitle>
-                Academic <span className="text-[#C4B5FD]">Background</span>
+                Academic <span className="text-[#7C3AED] dark:text-[#C4B5FD]">Background</span>
               </SectionTitle>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Education */}
               {EDUCATION.map((edu) => (
                 <div key={edu.institution} className="reveal glass-panel rounded-lg p-7">
-                  <div className="flex items-start gap-4 mb-5">
-                    <div className="w-10 h-10 rounded-sm bg-[rgba(124,58,237,0.15)] flex items-center justify-center flex-shrink-0">
-                      <span className="text-[#C4B5FD] text-lg">🎓</span>
+                  <div className="mb-5 flex items-start gap-4">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-[var(--tag-purple-bg)]">
+                      <span className="text-lg text-[#7C3AED] dark:text-[#C4B5FD]">🎓</span>
                     </div>
                     <div>
-                      <h3 className="font-mono text-base font-bold text-white">{edu.degree}</h3>
-                      <p className="font-mono text-xs text-[#C4B5FD] mt-0.5">{edu.field}</p>
-                      <p className="font-mono text-xs text-[rgba(226,232,240,0.4)] mt-1">{edu.institution}</p>
-                      <span className="inline-block mt-2 font-mono text-[10px] px-2.5 py-1 rounded-sm bg-[rgba(124,58,237,0.1)] text-[rgba(196,181,253,0.7)] border border-[rgba(124,58,237,0.15)]">
+                      <h3 className="font-mono text-base font-bold text-[color:var(--body)]">{edu.degree}</h3>
+                      <p className="mt-0.5 font-mono text-xs text-[#7C3AED] dark:text-[#C4B5FD]">{edu.field}</p>
+                      <p className="mt-1 font-mono text-xs text-[color:var(--label)]">{edu.institution}</p>
+                      <span className="mt-2 inline-block rounded-sm border border-[rgba(124,58,237,0.15)] bg-[var(--tag-purple-bg)] px-2.5 py-1 font-mono text-[10px] text-[var(--tag-purple-text)]">
                         {edu.period}
                       </span>
                     </div>
                   </div>
                   <div className="border-t border-[rgba(124,58,237,0.1)] pt-4">
-                    <p className="font-mono text-xs text-[rgba(226,232,240,0.4)] mb-3 tracking-widest uppercase">
-                      Relevant Areas
-                    </p>
+                    <p className="mb-3 font-mono text-xs uppercase tracking-widest text-[color:var(--label)]">Relevant Areas</p>
                     <div className="flex flex-wrap gap-2">
                       {edu.areas.map((area) => (
                         <span
                           key={area}
-                          className="font-mono text-xs px-2.5 py-1 rounded-sm bg-[rgba(9,9,11,0.6)] text-[rgba(226,232,240,0.5)] border border-[rgba(124,58,237,0.1)]"
+                          className="rounded-sm border border-[rgba(124,58,237,0.12)] bg-[var(--tag-muted-bg)] px-2.5 py-1 font-mono text-xs text-[var(--tag-muted-text)]"
                         >
                           {area}
                         </span>
@@ -561,16 +900,35 @@ export default function PortfolioPage() {
                 </div>
               ))}
 
-              {/* Certifications */}
               <div className="reveal delay-100 space-y-4">
                 {CERTIFICATIONS.map((cert) => (
-                  <div key={cert.title} className="glass-panel glass-panel-hover rounded-lg p-5 flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-sm bg-[rgba(124,58,237,0.15)] flex items-center justify-center flex-shrink-0">
-                      <span className="text-[#C4B5FD] text-base">🏅</span>
+                  <div
+                    key={cert.title}
+                    className={`glass-panel glass-panel-hover flex gap-4 rounded-lg p-6 ${
+                      cert.featured
+                        ? 'border-l-4 border-l-[#f97316] bg-[rgba(249,115,22,0.08)] dark:bg-[rgba(249,115,22,0.06)]'
+                        : ''
+                    }`}
+                  >
+                    <div
+                      className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-md text-lg ${
+                        cert.featured ? 'bg-[rgba(249,115,22,0.2)] text-[#ea580c]' : 'bg-[var(--tag-purple-bg)] text-[#7C3AED] dark:text-[#C4B5FD]'
+                      }`}
+                    >
+                      {cert.featured ? '✦' : '🏅'}
                     </div>
-                    <div>
-                      <h4 className="font-mono text-sm font-bold text-white">{cert.title}</h4>
-                      <p className="font-mono text-xs text-[rgba(226,232,240,0.4)] mt-1">{cert.issuer}</p>
+                    <div className="min-w-0 flex-1">
+                      {cert.featured && (
+                        <span className="mb-1 inline-block font-mono text-[10px] uppercase tracking-widest text-[#ea580c] dark:text-[#fb923c]">
+                          Featured
+                        </span>
+                      )}
+                      <h4 className="font-mono text-sm font-bold text-[color:var(--body)]">{cert.title}</h4>
+                      <p className="mt-1 font-mono text-xs text-[color:var(--body-muted)]">{cert.issuer}</p>
+                      <p className="mt-2 font-mono text-xs text-[color:var(--label)]">{cert.year}</p>
+                      {cert.note && (
+                        <p className="mt-2 font-mono text-[11px] leading-relaxed text-[#c2410c] dark:text-[#fdba74]">{cert.note}</p>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -579,14 +937,16 @@ export default function PortfolioPage() {
           </div>
         </Section>
 
-        {/* ── Services ── */}
-        <Section id="services" className="bg-[rgba(26,26,46,0.2)]">
+        <Section id="services" className="section-band">
           <div className="max-w-6xl mx-auto">
             <div className="reveal">
               <SectionLabel>What I Offer</SectionLabel>
               <SectionTitle>
-                My <span className="text-[#C4B5FD]">Services</span>
+                My <span className="text-[#7C3AED] dark:text-[#C4B5FD]">Services</span>
               </SectionTitle>
+              <p className="-mt-6 mb-12 max-w-3xl font-sans text-base leading-relaxed text-[color:var(--body-muted)]">
+                With a background in AI and Cybersecurity, I bring a security-first mindset to DevOps work.
+              </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {SERVICES.map((service, i) => (
@@ -594,74 +954,120 @@ export default function PortfolioPage() {
                   key={service.title}
                   className={`reveal glass-panel glass-panel-hover rounded-lg p-6 delay-${Math.min((i + 1) * 100, 500)}`}
                 >
-                  <div className="w-10 h-10 rounded-sm bg-[rgba(124,58,237,0.15)] flex items-center justify-center mb-4 text-[#C4B5FD] text-xl">
+                  <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-sm bg-[var(--tag-purple-bg)] text-xl text-[#7C3AED] dark:text-[#C4B5FD]">
                     {service.icon}
                   </div>
-                  <h3 className="font-mono text-sm font-bold text-white mb-3">{service.title}</h3>
-                  <p className="font-sans text-[rgba(226,232,240,0.5)] text-sm leading-relaxed">
-                    {service.description}
-                  </p>
+                  <h3 className="mb-3 font-mono text-sm font-bold text-[color:var(--body)]">{service.title}</h3>
+                  <p className="font-sans text-sm leading-relaxed text-[color:var(--body-muted)]">{service.description}</p>
                 </div>
               ))}
             </div>
           </div>
         </Section>
 
-        {/* ── Contact ── */}
+        <Section id="quotes">
+          <div className="max-w-6xl mx-auto">
+            <div className="reveal">
+              <SectionLabel>Reflections</SectionLabel>
+              <SectionTitle>
+                From the <span className="text-[#7C3AED] dark:text-[#C4B5FD]">Terminal</span>
+              </SectionTitle>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {QUOTES.map((q, i) => (
+                <blockquote
+                  key={i}
+                  className={`reveal glass-panel rounded-lg p-8 border-l-4 border-l-[#7C3AED] delay-${Math.min((i + 1) * 100, 300)}`}
+                >
+                  <p className="mb-4 font-mono text-sm leading-relaxed text-[color:var(--body-muted)] md:text-base">{q.text}</p>
+                  <footer className="font-mono text-xs text-[color:var(--label)]">— Mohamed Elhadad</footer>
+                </blockquote>
+              ))}
+            </div>
+          </div>
+        </Section>
+
         <Section id="contact">
           <div className="absolute inset-0 bg-radial-violet pointer-events-none opacity-60" />
           <div className="relative z-10 max-w-6xl mx-auto">
             <div className="reveal text-center mb-14">
               <SectionLabel>Get In Touch</SectionLabel>
               <SectionTitle>
-                Let&apos;s <span className="text-[#C4B5FD]">Connect</span>
+                Let&apos;s <span className="text-[#7C3AED] dark:text-[#C4B5FD]">Connect</span>
               </SectionTitle>
-              <p className="font-sans text-[rgba(226,232,240,0.5)] max-w-lg mx-auto">
+              <p className="mx-auto max-w-lg font-sans text-[color:var(--body-muted)]">
                 Open to new opportunities, collaborations, and interesting projects. Drop a message or reach out directly.
               </p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-              {/* Contact info */}
               <div className="reveal space-y-4">
                 {[
-                  { label: 'Email', value: 'mohammed.i.elhadad@gmail.com', href: 'mailto:mohammed.i.elhadad@gmail.com', icon: '✉' },
-                  { label: 'Phone', value: '+20 1020884588', href: 'tel:+201020884588', icon: '☎' },
-                  { label: 'LinkedIn', value: 'linkedin.com/in/mohamed-ibrahim-b2663a331', href: 'https://linkedin.com/in/mohamed-ibrahim-b2663a331', icon: '⬡' },
-                  { label: 'GitHub', value: 'github.com/mohamed-ibrahim09', href: 'https://github.com/mohamed-ibrahim09', icon: '⬛' },
-                  { label: 'Location', value: 'Tanta, Egypt', href: null, icon: '◈' },
+                  {
+                    label: 'Email',
+                    display: 'mohammed.i.elhadad@gmail.com',
+                    href: 'mailto:mohammed.i.elhadad@gmail.com',
+                    external: false,
+                    icon: '✉' as const,
+                  },
+                  {
+                    label: 'Phone',
+                    display: '+20 1020884588',
+                    href: 'tel:+201020884588',
+                    external: false,
+                    icon: '☎' as const,
+                  },
+                  {
+                    label: 'LinkedIn',
+                    display: 'linkedin.com/in/mohamed-ibrahim-elhadad',
+                    href: 'https://www.linkedin.com/in/mohamed-ibrahim-elhadad',
+                    external: true,
+                    icon: '⬡' as const,
+                  },
+                  {
+                    label: 'GitHub',
+                    display: 'github.com/mohamed-ibrahim09',
+                    href: 'https://github.com/mohamed-ibrahim09',
+                    external: true,
+                    icon: '⬛' as const,
+                  },
+                  {
+                    label: 'Upwork',
+                    display: 'Mohamed Elhadad',
+                    href: 'https://www.upwork.com/freelancers/~01ec92b3430f913640?mp_source=share',
+                    external: true,
+                    upwork: true,
+                  },
                 ].map((item) => (
-                  <div key={item.label} className="glass-panel glass-panel-hover rounded-lg p-5 flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-sm bg-[rgba(124,58,237,0.15)] flex items-center justify-center flex-shrink-0 text-[#C4B5FD]">
-                      {item.icon}
+                  <div key={item.label} className="glass-panel glass-panel-hover flex items-center gap-4 rounded-lg p-5">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-[var(--tag-purple-bg)] text-[#7C3AED] dark:text-[#C4B5FD]">
+                      {'upwork' in item && item.upwork ? (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="#14a800" aria-hidden>
+                          <path d="M18.561 13.158c-1.102 0-2.135-.467-3.074-1.227l.228-1.076.008-.042c.207-1.143.849-3.06 2.839-3.06 1.492 0 2.703 1.212 2.703 2.703-.001 1.489-1.212 2.702-2.704 2.702zm0-8.14c-2.539 0-4.51 1.649-5.31 4.366-1.22-1.834-2.148-4.036-2.687-5.892H7.828v7.112c-.002 1.406-1.141 2.546-2.547 2.546-1.405 0-2.543-1.14-2.543-2.546V3.492H0v7.112c0 2.914 2.37 5.303 5.281 5.303 2.913 0 5.283-2.389 5.283-5.303v-1.19c.529 1.107 1.182 2.229 1.974 3.221l-1.673 7.873h2.797l1.213-5.71c1.063.679 2.285 1.109 3.686 1.109 3 0 5.439-2.452 5.439-5.45 0-3-2.439-5.439-5.439-5.439z" />
+                        </svg>
+                      ) : (
+                        'icon' in item && item.icon
+                      )}
                     </div>
                     <div>
-                      <p className="font-mono text-[10px] text-[rgba(226,232,240,0.4)] tracking-widest uppercase mb-0.5">
+                      <p className="mb-0.5 font-mono text-[10px] uppercase tracking-widest text-[color:var(--label)]">
                         {item.label}
                       </p>
-                      {item.href ? (
-                        <a
-                          href={item.href}
-                          target={item.href.startsWith('http') ? '_blank' : undefined}
-                          rel="noopener noreferrer"
-                          className="font-mono text-sm text-[#C4B5FD] hover:text-white transition-colors"
-                        >
-                          {item.value}
-                        </a>
-                      ) : (
-                        <p className="font-mono text-sm text-[rgba(226,232,240,0.7)]">{item.value}</p>
-                      )}
+                      <a
+                        href={item.href}
+                        {...(item.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                        className="font-mono text-sm text-[#7C3AED] transition-colors hover:text-[#5b21b6] dark:text-[#C4B5FD] dark:hover:text-white"
+                      >
+                        {item.display}
+                      </a>
                     </div>
                   </div>
                 ))}
               </div>
 
-              {/* Form */}
               <div className="reveal delay-200">
                 <div className="glass-panel rounded-lg p-7">
-                  <p className="font-mono text-xs text-[rgba(226,232,240,0.4)] mb-6 tracking-widest uppercase">
-                    Send a message
-                  </p>
+                  <p className="mb-6 font-mono text-xs uppercase tracking-widest text-[color:var(--label)]">Send a message</p>
                   <ContactForm />
                 </div>
               </div>
@@ -670,13 +1076,12 @@ export default function PortfolioPage() {
         </Section>
       </main>
 
-      {/* ── Footer ── */}
-      <footer className="border-t border-[rgba(124,58,237,0.1)] py-8 px-6">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="font-mono text-xs text-[rgba(226,232,240,0.3)]">
-            © 2024 Mohamed Ibrahim · Junior DevOps &amp; Cloud Engineer
+      <footer className="border-t border-[color:var(--glass-border)] px-6 py-8">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 md:flex-row">
+          <p className="font-mono text-xs text-[color:var(--label)]">
+            © 2026 Mohamed Elhadad · Junior DevOps &amp; Cloud Engineer
           </p>
-          <div className="flex items-center gap-2 font-mono text-xs text-[rgba(226,232,240,0.3)]">
+          <div className="flex items-center gap-2 font-mono text-xs text-[color:var(--label)]">
             <span className="w-1.5 h-1.5 rounded-full bg-[#7C3AED] pulse-dot" />
             <span>Built with Next.js &amp; Tailwind</span>
           </div>

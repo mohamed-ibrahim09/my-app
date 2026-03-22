@@ -5,23 +5,55 @@
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap');
 
 :root {
-  --void: #09090B;
-  --glass: #1A1A2E;
-  --glass-border: rgba(124, 58, 237, 0.15);
-  --violet: #7C3AED;
-  --violet-glow: rgba(124, 58, 237, 0.3);
-  --lilac: #C4B5FD;
-  --lilac-dim: rgba(196, 181, 253, 0.6);
-  --slate: #E2E8F0;
-  --slate-dim: rgba(226, 232, 240, 0.5);
-  --slate-muted: rgba(226, 232, 240, 0.3);
+  --void: #f8fafc;
+  --glass: rgba(255, 255, 255, 0.96);
+  --glass-border: rgba(124, 58, 237, 0.14);
+  --glass-hover: #ffffff;
+  --violet: #7c3aed;
+  --violet-glow: rgba(124, 58, 237, 0.28);
+  --lilac: #6d28d9;
+  --lilac-dim: rgba(91, 33, 182, 0.55);
+  --body: #0f172a;
+  --body-muted: rgba(15, 23, 42, 0.72);
+  --body-faint: #64748b;
+  --label: rgba(71, 85, 105, 0.88);
+  --section-alt: rgba(124, 58, 237, 0.05);
+  --tag-muted-bg: #f1f5f9;
+  --tag-muted-text: #475569;
+  --tag-purple-bg: rgba(124, 58, 237, 0.1);
+  --tag-purple-text: rgba(91, 33, 182, 0.92);
+  --slate: var(--body);
+  --slate-dim: var(--body-muted);
+  --slate-muted: var(--body-faint);
   --font-mono: 'JetBrains Mono', monospace;
   --font-sans: 'DM Sans', sans-serif;
+}
+
+html.dark {
+  --void: #0f1117;
+  --glass: #1a1d27;
+  --glass-border: #2a2d3a;
+  --glass-hover: #252837;
+  --lilac: #c4b5fd;
+  --lilac-dim: rgba(196, 181, 253, 0.6);
+  --body: #e2e8f0;
+  --body-muted: rgba(226, 232, 240, 0.62);
+  --body-faint: #8892a4;
+  --label: rgba(226, 232, 240, 0.42);
+  --section-alt: rgba(26, 29, 39, 0.65);
+  --tag-muted-bg: rgba(15, 17, 23, 0.65);
+  --tag-muted-text: rgba(226, 232, 240, 0.48);
+  --tag-purple-bg: rgba(124, 58, 237, 0.14);
+  --tag-purple-text: rgba(196, 181, 253, 0.88);
+  --slate: var(--body);
+  --slate-dim: var(--body-muted);
+  --slate-muted: var(--body-faint);
 }
 
 html {
   scroll-behavior: smooth;
   background-color: var(--void);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -33,26 +65,30 @@ html {
 body {
   font-family: var(--font-sans);
   background-color: var(--void);
-  color: var(--slate);
+  color: var(--body);
   overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: var(--void); }
+::-webkit-scrollbar-track {
+  background: var(--void);
+}
 ::-webkit-scrollbar-thumb { background: var(--violet); border-radius: 2px; }
 
 /* ── Glass Panel ── */
 .glass-panel {
-  background: rgba(26, 26, 46, 0.6);
+  background: var(--glass);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--glass-border);
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 }
 
 .glass-panel-hover:hover {
-  background: rgba(26, 26, 46, 0.85);
-  border-color: rgba(124, 58, 237, 0.4);
+  background: var(--glass-hover);
+  border-color: rgba(124, 58, 237, 0.38);
 }
 
 /* ── Violet Glow ── */
@@ -203,7 +239,7 @@ body {
 /* ── CTA Button ── */
 .btn-ghost {
   background: transparent;
-  border: 1px solid rgba(124, 58, 237, 0.5);
+  border: 1px solid rgba(124, 58, 237, 0.45);
   color: var(--lilac);
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -212,6 +248,11 @@ body {
   border-color: var(--violet);
   background: rgba(124, 58, 237, 0.1);
   box-shadow: 0 0 20px var(--violet-glow);
+}
+
+html.dark .btn-ghost {
+  border-color: rgba(196, 181, 253, 0.35);
+  color: #c4b5fd;
 }
 
 .btn-solid {
@@ -236,10 +277,34 @@ body {
 
 /* ── Grid Lines ── */
 .grid-lines {
-  background-image: 
-    linear-gradient(rgba(124, 58, 237, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(124, 58, 237, 0.04) 1px, transparent 1px);
+  background-image: linear-gradient(rgba(124, 58, 237, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124, 58, 237, 0.06) 1px, transparent 1px);
   background-size: 40px 40px;
+}
+
+html.dark .grid-lines {
+  background-image: linear-gradient(rgba(124, 58, 237, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124, 58, 237, 0.04) 1px, transparent 1px);
+}
+
+/* ── Section band (projects / services) ── */
+.section-band {
+  background-color: var(--section-alt);
+  transition: background-color 0.3s ease;
+}
+
+/* ── Terminal (always dark chrome for contrast) ── */
+.terminal-window {
+  box-shadow: 0 0 40px var(--violet-glow), 0 0 80px rgba(124, 58, 237, 0.08);
+}
+
+.terminal-window .terminal-chrome {
+  border-bottom: 1px solid rgba(124, 58, 237, 0.2);
+  background: #14161f;
+}
+
+.terminal-window .terminal-body {
+  background: rgba(9, 9, 11, 0.92);
 }
 
 /* ── Platform Selector ── */
@@ -279,4 +344,23 @@ body {
 /* ── Mobile responsive ── */
 @media (max-width: 768px) {
   .progress-line { display: none; }
+}
+
+/* ── Project modal ── */
+@keyframes modal-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modal-panel-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.modal-backdrop-enter {
+  animation: modal-backdrop-in 0.2s ease-out forwards;
+}
+
+.modal-panel-enter {
+  animation: modal-panel-in 0.2s ease-out forwards;
 }
